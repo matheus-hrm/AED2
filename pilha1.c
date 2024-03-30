@@ -2,77 +2,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct pilha {
-    int top;
-    int size;
-    char *buffer;
-} Pilha;
+#define MAX_SIZE 50
 
-Pilha *cria_pilha () {
-    Pilha *p = (Pilha *) malloc(sizeof (Pilha));
-    p->top = -1;
-    p->size = 1;
-    p->buffer = (char *) malloc(p->size * sizeof (char));
-    return p;
+void push(char *stack, char el, int *top) {
+    (*top)++;
+    stack[*top] = el;
 }
 
-void empilha (Pilha *p, char c) {
-    if (p->top == p->size - 1) {
-        p->size *= 2;
-        p->buffer = (char *) realloc(p->buffer, p->size * sizeof (char));
-    }
-    p->top++;
-    p->buffer[p->top] = c;
+char pop(char *stack, int *top) {
+    char el = stack[*top];
+    (*top)--;
+    return el;
 }
 
-void desempilha (Pilha *p) {
-    if (p->top == -1) {
-        printf("Pilha vazia\n");
-        return;
-    }
-    p->top--;
+int is_op(char c) {
+    return (c == '+' || c == '-' || c == '*' || c == '/');
 }
 
-void calcula(Pilha *p) {
-    char c = p->buffer[p->top];
-    desempilha(p);
-    int b = p->buffer[p->top] - '0';
-    desempilha(p);
-    int a = p->buffer[p->top] - '0';
-    desempilha(p);  
-    int r;
-    switch (c) {
-        case '+':
-            r = a + b;
-            break;
-        case '-':
-            r = a - b;
-            break;
-        case '*':
-            r = a * b;
-            break;
-        case '/':
-            r = a / b;
-            break;
-    }
-    empilha(p, r + '0');
-}
+int eval_expr(char *expr) {
+    char stack[MAX_SIZE];
+    int top = -1;
 
-int main () {
-    Pilha *p = cria_pilha();
-    char exp[20];
-    printf("Digite a expressão: ");
-    scanf("[^\n]", exp);
-    for(int i = 0; i < strlen(exp); i++) {
-        if(exp[i] >= '0' && exp[i] <= '9') {
-            empilha(p, exp[i]);
+    for(int i = 0; i < strlen(expr); i++) {
+        if (!is_op(expr[i])) {
+            push(stack, expr[i] - '0', &top);
         } else {
-            empilha(p, exp[i]);
-            calcula(p);
+            int a = pop(stack, &top);
+            int b = pop(stack, &top);
+            int res;
+            switch(expr[i]) {
+                case '+':
+                    res = b + a;
+                    break;
+                case '-':
+                    res = b - a;
+                    break;
+                case '*':
+                    res = b * a;
+                    break;
+                case '/':
+                    res = b / a;
+                    break;
+            }
+            push(stack, res, &top);
         }
     }
-    printf("Resultado: %d\n", p->buffer[p->top]);
-    free(p->buffer);
-    free(p);
+    return pop(stack, &top);
+}
+
+int main(void) {
+    char expr[MAX_SIZE];
+    
+    printf("Digite a expressao: ");
+    scanf("%s", expr);
+    
+    int res = eval_expr(expr);
+    printf("Resultado: %d\n", res);
+
     return 0;
 }
